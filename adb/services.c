@@ -157,7 +157,11 @@ void reboot_service(int fd, void *arg)
     if (ret < 0) {
         snprintf(buf, sizeof(buf), "reboot failed: %d\n", ret);
         writex(fd, buf, strlen(buf));
+        goto cleanup;
     }
+    // Don't return early. Give the reboot command time to take effect
+    // to avoid messing up scripts which do "adb reboot && adb wait-for-device"
+    while(1) { pause(); }
 cleanup:
     free(arg);
     adb_close(fd);
@@ -315,9 +319,15 @@ static int create_subproc_thread(const char *name)
     adb_thread_t t;
     int ret_fd;
     pid_t pid;
+    char value[PROPERTY_VALUE_MAX];
     const char* shell_command;
     struct stat filecheck;
-    if (stat(ALTERNATE_SHELL_COMMAND, &filecheck) == 0) {
+
+    property_get("persist.sys.adb.shell", value, "");
+    if (value[0] != '\0' && stat(value, &filecheck) == 0) {
+        shell_command = value;
+    }
+    else if (stat(ALTERNATE_SHELL_COMMAND, &filecheck) == 0) {
         shell_command = ALTERNATE_SHELL_COMMAND;
     }
     else {
