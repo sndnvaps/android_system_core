@@ -22,13 +22,13 @@ LOCAL_FORCE_STATIC_EXECUTABLE := true
 LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT)
 LOCAL_UNSTRIPPED_PATH := $(TARGET_ROOT_OUT_UNSTRIPPED)
 
-LOCAL_C_INCLUDES := $(call include-path-for, recovery)
+LOCAL_C_INCLUDES := $(call project-path-for,recovery)
 
 LOCAL_STATIC_LIBRARIES := libminui libpixelflinger_static libpng
 ifeq ($(strip $(BOARD_CHARGER_ENABLE_SUSPEND)),true)
 LOCAL_STATIC_LIBRARIES += libsuspend
 endif
-LOCAL_STATIC_LIBRARIES += libz libstdc++ libcutils liblog libm libc
+LOCAL_STATIC_LIBRARIES += libz libstdc++ libcutils liblog libm libc libutils
 
 ifneq ($(BOARD_BATTERY_DEVICE_NAME),)
 LOCAL_CFLAGS += -DBATTERY_DEVICE_NAME=\"$(BOARD_BATTERY_DEVICE_NAME)\"

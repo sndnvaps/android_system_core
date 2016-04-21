@@ -759,7 +759,7 @@ static char* find_and_open_tombstone(int* fd)
         if (errno != ENOENT)
             continue;
 
-        *fd = open(path, O_CREAT | O_EXCL | O_WRONLY, 0600);
+        *fd = open(path, O_CREAT | O_EXCL | O_WRONLY | O_NOFOLLOW | O_CLOEXEC, 0600);
         if (*fd < 0)
             continue;   /* raced ? */
 
@@ -769,7 +769,7 @@ static char* find_and_open_tombstone(int* fd)
 
     /* we didn't find an available file, so we clobber the oldest one */
     snprintf(path, sizeof(path), TOMBSTONE_DIR"/tombstone_%02d", oldest);
-    *fd = open(path, O_CREAT | O_TRUNC | O_WRONLY, 0600);
+    *fd = open(path, O_CREAT | O_TRUNC | O_WRONLY | O_NOFOLLOW | O_CLOEXEC, 0600);
     if (*fd < 0) {
         LOG("failed to open tombstone file '%s': %s\n", path, strerror(errno));
         return NULL;
@@ -810,14 +810,6 @@ static int activity_manager_connect() {
 char* engrave_tombstone(pid_t pid, pid_t tid, int signal, uintptr_t abort_msg_address,
         bool dump_sibling_threads, bool quiet, bool* detach_failed,
         int* total_sleep_time_usec) {
-    mkdir(TOMBSTONE_DIR, 0755);
-    chown(TOMBSTONE_DIR, AID_SYSTEM, AID_SYSTEM);
-
-    if (selinux_android_restorecon(TOMBSTONE_DIR, 0) == -1) {
-        *detach_failed = false;
-        return NULL;
-    }
-
     int fd;
     char* path = find_and_open_tombstone(&fd);
     if (!path) {
